@@ -1,0 +1,7 @@
+--threads:on
+--gc:arc
+--opt:speed
+--d:release
+--d:danger
+--d:flto
+--passC:"-O3"
