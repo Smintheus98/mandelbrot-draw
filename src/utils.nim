@@ -76,7 +76,7 @@ type
 
 #*****************************************************************************#
 #                                                                             #
-#   Packing object to shate details about the images dimensions               #
+#   Packing object to share details about the images dimensions               #
 #                                                                             #
 #*****************************************************************************#
 type ImageDim* = object
