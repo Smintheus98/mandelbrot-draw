@@ -1,4 +1,5 @@
 nimcache/
 nimblecache/
 htmldocs/
-bin/mandelbrot
+bin/
+frames/
