@@ -3,12 +3,34 @@ Drawing mandelbrot set with zoom in
 
 # Performance log
 
-| Date          | Branch    | Specification                                                 | Time      | Notes                                         |
-|---------------|-----------|---------------------------------------------------------------|-----------|-----------------------------------------------| 
-| 2022-07-10    | main      | - vanishing point: -0.17355903956768 + i \* 0.65927049566959  | ~ 29 min  |                                               |
-|               |           | - coloring: linear, 50 times                                  |           |                                               |
-|               |           | - iterations: 10.000                                          |           |                                               |
-|               |           | - frames: 300                                                 |           |                                               |
-|               |           | - zoom ratio: 0.9                                             |           |                                               |
-|               |           | - threads: 16                                                 |           |                                               |
-|               |           | - image resolution: 1000x1000 pixel                           |           |                                               |
+<table>
+  <tr>
+    <td> Date </td>
+    <td> Branch </td>
+    <td> Specification </td>
+    <td> Time </td>
+    <td> Notes </td>
+  </tr>
+  <tr>
+    <td> 2022-07-10 </td>
+    <td> main </td>
+    <td>
+      <ul>
+        <li> vanishing point: $-0.17355903956768 + i \cdot 0.65927049566959$ </li>
+        <li> coloring: linear, $50$ times </li>
+        <li> iterations: $10.000$ </li>
+        <li> frames: $300$ </li>
+        <li> zoom ratio: $0.9$ </li>
+        <li> threads: $16$ </li>
+        <li> image resolution: $1000 \times 1000$ pixel </li>
+      </ul>
+    </td>
+    <td> $\approx 29$ min. </td>
+    <td>
+      <ul>
+        <li> Dirty code </li>
+        <li> Color Palettes constant </br> (compile time) </li>
+      </ul>
+    </td>
+  </tr>
+</table>
