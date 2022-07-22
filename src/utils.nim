@@ -1,3 +1,8 @@
+import std / [math, os, osproc, strformat]
+import pkg / chroma
+
+export chroma
+
 {.push inline.}
 #*****************************************************************************#
 #                                                                             #
@@ -50,10 +55,10 @@ proc pixelInterpolate*(interval: Interval; pixelCount, pixel: int): float =
 proc calcCenter*(interval: Interval2d): RealPos =
   return (x: interval.x.interpolate(0.5), y: interval.y.interpolate(0.5))
 
-proc adjust*(currInterval: Interval2d; centering: RealPos; ratio: float): Interval2d =
+proc adjust*(currInterval: Interval2d; vanishingPoint: RealPos; ratio: float): Interval2d =
   let
     currCenter = calcCenter(currInterval)
-    adjustedCenter = centering + initVec(centering, currCenter) * ratio
+    adjustedCenter = vanishingPoint + initVec(vanishingPoint, currCenter) * ratio
 
     currIntervalLens = (x: abs(currInterval.x.b - currInterval.x.a), y: abs(currInterval.y.b - currInterval.y.a))
     adjustedIntervalLens = (x: currIntervalLens.x * ratio, y: currIntervalLens.x * ratio)
@@ -76,16 +81,101 @@ type
 
 #*****************************************************************************#
 #                                                                             #
-#   Packing object to share details about the images dimensions               #
+#   Packing object to share information more easily and compact               #
 #                                                                             #
 #*****************************************************************************#
-type ImageDim* = object
-  real*: Interval2d
-  pixel*: PixelDim
-  
+type
+  ImageDim* = object
+    real*: Interval2d
+    pixel*: PixelDim
+  Ratio* = range[0.0..1.0]
+  ZoomInfo* = object
+    vanishingPoint*: RealPos
+    ratio*: Ratio
+    frameCount*: Positive
 
-proc adjust*(imgDim: ImageDim; centering: RealPos; ratio: float): ImageDim =
+proc adjust*(imgDim: ImageDim; vanishingPoint: RealPos; ratio: float): ImageDim =
   result.pixel = imgDim.pixel
-  result.real = imgDim.real.adjust(centering, ratio)
+  result.real  = imgDim.real.adjust(vanishingPoint, ratio)
+
+proc adjust*(imgDim: ImageDim; zoomInfo: Zoominfo): ImageDim =
+  result.pixel = imgDim.pixel
+  result.real  = imgDim.real.adjust(zoomInfo.vanishingPoint, zoomInfo.ratio)
+
+
+#*****************************************************************************#
+#                                                                             #
+#   Color palette creater funtion                                             #
+#                                                                             #
+#*****************************************************************************#
+type
+  Direction* = enum
+    Clockwise, CounterClockwise
+  Degree* = range[0.0..360.0]
+  Palette* = seq[Color]
+
+proc makeLinPalette*(length: Positive; times: Positive = 1; offset: Degree = 0.0; lastBlack: bool = true; direction: Direction = CounterClockwise): Palette =
+  result = newSeqOfCap[Color](length)
+  var x: float
+  var setX: proc(x: var float; i: int)
+
+  # The direction needs to be checked once!
+  {.pop inline.}
+  if direction == Clockwise:
+    setX = proc(x: var float; i: int) = x = float(length-1-i)
+  else:
+    setX = proc(x: var float; i: int) = x = float(i)
+  {.push inline.}
+
+  for i in 0..<length:
+    x.setX(i)
+
+    var h = ((times * 360) / length * x + offset) mod Degree.high
+
+    result.add color(hsl(h, 100, 50))
+  if lastBlack:
+    result[^1] = color(0, 0, 0)
+
+#[
+proc makeLogPalette(length: Positive; times: Positive = 1; offset: Degree = 0.0; lastBlack: bool = true; direction: Direction = CounterClockwise): seq[Color] =
+  #logPalette: seq[ColorHSL] = collect:
+  #  var c = 300
+  #  for i in 0..maxIter:
+  #    var x = (maxIter-i) / c
+  #    var h = exp(x) / exp(maxIter/c) * 240
+  #    if i < maxIter:
+  #      hsl(h, 100, 50)
+  #    else:
+  #      hsl(0, 0, 0)
+  discard
+]#
+
+
+#*****************************************************************************#
+#                                                                             #
+#   Color palette creater funtion                                             #
+#                                                                             #
+#*****************************************************************************#
+proc clearDir*(dir: string) =
+  removeDir(dir)
+  createDir(dir)
+
+
+#*****************************************************************************#
+#                                                                             #
+#   Convenience procedures and templates                                      #
+#                                                                             #
+#*****************************************************************************#
+template withProgress*(showProgress: bool; i: int; body: untyped) =
+  if showProgress:
+    stdout.write(fmt"Calculating Frame {i:03}: ")
+    stdout.flushFile()
+  body
+  if showProgress:
+    stdout.write("Done\n")
+
+proc framesToVideo*(frameDir, outputName: string; frameDuration_ms: int) =
+  #ffmpeg -i mandelbrot_frame_%03d.png -filter:v fps=13 video.gif
+  discard execProcess("ffmpeg", args = ["-i", fmt"{frameDir}/mandelbrot_frame_%03d.png", "-filter:v", fmt"fps={1000/frameDuration_ms}", outputName], options={poUsePath})
 
 {.pop.}
